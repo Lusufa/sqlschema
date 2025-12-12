@@ -272,7 +272,7 @@ export default function Home() {
                     Generating...
                   </>
                 ) : (
-                  'Generate SQL & Results'
+                  'Run'
                 )}
               </Button>
             </div>
