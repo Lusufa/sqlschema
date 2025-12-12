@@ -3,13 +3,10 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { generateSqlQuery } from '@/ai/flows/generate-sql-query-from-natural-language';
-import { testGeneratedSqlQuery } from '@/ai/flows/test-generated-sql-query';
-import { Database, BrainCircuit, Code, Play, Clipboard, AlertTriangle, Loader2 } from 'lucide-react';
+import { Database, BrainCircuit, Code, Clipboard, AlertTriangle, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function Home() {
@@ -18,10 +15,6 @@ export default function Home() {
   const [generatedQuery, setGeneratedQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const [dbUri, setDbUri] = useState('');
-  const [testResult, setTestResult] = useState('');
-  const [isTesting, setIsTesting] = useState(false);
 
   const { toast } = useToast();
 
@@ -37,7 +30,6 @@ export default function Home() {
     setIsLoading(true);
     setError(null);
     setGeneratedQuery('');
-    setTestResult('');
 
     try {
       const result = await generateSqlQuery({
@@ -54,44 +46,6 @@ export default function Home() {
       });
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleTestQuery = async () => {
-    if (!generatedQuery) {
-        toast({
-            variant: 'destructive',
-            title: 'No query to test',
-            description: 'Please generate a query first.',
-          });
-      return;
-    }
-    if (!dbUri) {
-        toast({
-            variant: 'destructive',
-            title: 'Missing Database URI',
-            description: 'Please provide a database URI to test the query.',
-          });
-      return;
-    }
-    setIsTesting(true);
-    setTestResult('');
-
-    try {
-      const result = await testGeneratedSqlQuery({
-        dbUri,
-        query: generatedQuery,
-      });
-      setTestResult(result.result);
-    } catch (e: any) {
-      setTestResult(`Error: ${e.message || 'An unexpected error occurred.'}`);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: e.message || 'Failed to test query.',
-      });
-    } finally {
-      setIsTesting(false);
     }
   };
 
@@ -209,48 +163,6 @@ export default function Home() {
                 )}
               </CardContent>
             </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 font-headline">
-                  <Play />
-                  Test Query
-                </CardTitle>
-                <CardDescription>
-                  Execute the query against a database. (Note: This is a placeholder and does not connect to a real database).
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="db-uri">Database URI</Label>
-                  <Input 
-                    id="db-uri" 
-                    placeholder="e.g., postgresql://user:pass@host:port/db" 
-                    value={dbUri}
-                    onChange={(e) => setDbUri(e.target.value)}
-                    />
-                </div>
-                <Button onClick={handleTestQuery} disabled={isTesting || !generatedQuery} className="w-full">
-                  {isTesting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Testing...
-                    </>
-                  ) : (
-                    'Run Test'
-                  )}
-                </Button>
-                {testResult && (
-                  <div className="bg-muted rounded-md p-4">
-                    <p className="text-sm font-semibold mb-2">Test Result:</p>
-                    <pre className="font-code text-sm whitespace-pre-wrap">
-                      <code>{testResult}</code>
-                    </pre>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
           </div>
         </div>
 
