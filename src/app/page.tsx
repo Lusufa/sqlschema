@@ -127,44 +127,8 @@ export default function Home() {
       <Sidebar>
         <SidebarContent className="p-0">
           <div className="flex flex-col gap-4">
-            <SidebarGroup className="pt-4">
-                <Card className="border-0 shadow-none">
-                  <CardHeader className="p-2 pt-0">
-                    <CardTitle className="flex items-center gap-2 font-headline text-lg">
-                      <Database />
-                      Database Schema
-                    </CardTitle>
-                    <CardDescription className="text-xs">
-                      Paste your SQL `CREATE TABLE` statements or upload a file.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex flex-col gap-4 p-2 pt-0">
-                    <Textarea
-                      placeholder="CREATE TABLE users (id INT, name VARCHAR(255), ...);"
-                      className="h-40 font-code text-sm"
-                      value={schema}
-                      onChange={(e) => {
-                        setSchema(e.target.value)
-                        setActiveFile(null)
-                      }}
-                    />
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleFileChange}
-                      className="hidden"
-                      accept=".sql,.txt"
-                    />
-                    <Button variant="outline" size="sm" onClick={handleUploadClick}>
-                      <Upload className="mr-2 h-4 w-4" />
-                      Upload File
-                    </Button>
-                  </CardContent>
-                </Card>
-            </SidebarGroup>
-            
             {uploadedFiles.length > 0 && (
-                <SidebarGroup>
+                <SidebarGroup className="pt-4">
                     <SidebarGroupLabel>Uploaded Files</SidebarGroupLabel>
                     <SidebarMenu>
                         {uploadedFiles.map((file) => (
@@ -189,42 +153,6 @@ export default function Home() {
                     </SidebarMenu>
                 </SidebarGroup>
             )}
-
-
-            <SidebarGroup>
-                <Card className="border-0 shadow-none">
-                  <CardHeader className="p-2 pt-0">
-                    <CardTitle className="flex items-center gap-2 font-headline text-lg">
-                      <BrainCircuit />
-                      Your Question
-                    </CardTitle>
-                    <CardDescription className="text-xs">
-                      Ask a question in plain English based on your schema.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-2 pt-0">
-                    <Textarea
-                      placeholder="How many users are there?"
-                      className="h-24"
-                      value={question}
-                      onChange={(e) => setQuestion(e.target.value)}
-                    />
-                  </CardContent>
-                </Card>
-            </SidebarGroup>
-
-            <div className="p-2">
-              <Button onClick={handleGenerateQuery} disabled={isLoading} size="lg" className="w-full">
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  'Generate SQL'
-                )}
-              </Button>
-            </div>
           </div>
         </SidebarContent>
       </Sidebar>
@@ -242,6 +170,74 @@ export default function Home() {
           </header>
 
           <div className="flex flex-col gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 font-headline text-lg">
+                    <Database />
+                    Database Schema
+                  </CardTitle>
+                  <CardDescription>
+                    Paste your SQL `CREATE TABLE` statements or upload a file.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-4">
+                  <Textarea
+                    placeholder="CREATE TABLE users (id INT, name VARCHAR(255), ...);"
+                    className="h-40 font-code text-sm"
+                    value={schema}
+                    onChange={(e) => {
+                      setSchema(e.target.value);
+                      setActiveFile(null);
+                    }}
+                  />
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    className="hidden"
+                    accept=".sql,.txt"
+                  />
+                  <Button variant="outline" onClick={handleUploadClick}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload File
+                  </Button>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 font-headline text-lg">
+                    <BrainCircuit />
+                    Your Question
+                  </CardTitle>
+                  <CardDescription>
+                    Ask a question in plain English based on your schema.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Textarea
+                    placeholder="How many users are there?"
+                    className="h-40"
+                    value={question}
+                    onChange={(e) => setQuestion(e.target.value)}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="text-center">
+              <Button onClick={handleGenerateQuery} disabled={isLoading} size="lg">
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  'Generate SQL'
+                )}
+              </Button>
+            </div>
+            
             <Card className="min-h-[300px] w-full">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between font-headline">
