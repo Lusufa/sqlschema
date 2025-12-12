@@ -1,13 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { generateSqlQuery } from '@/ai/flows/generate-sql-query-from-natural-language';
-import { Database, BrainCircuit, Code, Clipboard, AlertTriangle, Loader2 } from 'lucide-react';
+import { Database, BrainCircuit, Code, Clipboard, AlertTriangle, Loader2, Upload } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Sidebar, SidebarContent, SidebarHeader, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 
 export default function Home() {
   const [schema, setSchema] = useState('');
@@ -15,6 +16,8 @@ export default function Home() {
   const [generatedQuery, setGeneratedQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
 
   const { toast } = useToast();
 
@@ -56,17 +59,34 @@ export default function Home() {
     }
   };
 
-  return (
-    <main className="min-h-screen bg-background text-foreground">
-      <div className="container mx-auto p-4 md:p-8">
-        <header className="text-center mb-12">
-          <h1 className="font-headline text-5xl font-bold tracking-tight">SQL Genius</h1>
-          <p className="text-muted-foreground mt-4 text-lg max-w-2xl mx-auto">
-            Transform your natural language questions into SQL queries with the power of AI.
-          </p>
-        </header>
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target?.result as string;
+        setSchema(content);
+        toast({ title: 'File loaded successfully!' });
+      };
+      reader.onerror = () => {
+        toast({
+          variant: 'destructive',
+          title: 'Error reading file',
+          description: 'There was an issue uploading your file.',
+        });
+      };
+      reader.readAsText(file);
+    }
+  };
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  return (
+    <>
+      <Sidebar>
+        <SidebarContent className="p-4">
           <div className="flex flex-col gap-8">
             <Card>
               <CardHeader>
@@ -75,16 +95,27 @@ export default function Home() {
                   Database Schema
                 </CardTitle>
                 <CardDescription>
-                  Paste your SQL `CREATE TABLE` statements here.
+                  Paste your SQL `CREATE TABLE` statements or upload a file.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex flex-col gap-4">
                 <Textarea
                   placeholder="CREATE TABLE users (id INT, name VARCHAR(255), ...);"
                   className="h-48 font-code text-sm"
                   value={schema}
                   onChange={(e) => setSchema(e.target.value)}
                 />
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  className="hidden"
+                  accept=".sql,.txt"
+                />
+                <Button variant="outline" onClick={handleUploadClick}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload File
+                </Button>
               </CardContent>
             </Card>
 
@@ -119,19 +150,38 @@ export default function Home() {
               )}
             </Button>
           </div>
+        </SidebarContent>
+      </Sidebar>
+      <SidebarInset>
+        <main className="min-h-screen bg-background text-foreground">
+        <div className="container mx-auto p-4 md:p-8">
+          <header className="text-center mb-12">
+            <div className="md:hidden mb-4">
+              <SidebarTrigger />
+            </div>
+            <h1 className="font-headline text-5xl font-bold tracking-tight">SQL Genius</h1>
+            <p className="text-muted-foreground mt-4 text-lg max-w-2xl mx-auto">
+              Transform your natural language questions into SQL queries with the power of AI.
+            </p>
+          </header>
 
           <div className="flex flex-col gap-8">
-            <Card className="min-h-[300px]">
+            <Card className="min-h-[300px] w-full">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between font-headline">
                   <div className="flex items-center gap-2">
                     <Code />
                     Generated SQL
                   </div>
-                  <Button variant="ghost" size="icon" onClick={copyToClipboard} disabled={!generatedQuery || isLoading}>
-                    <Clipboard className="h-4 w-4" />
-                    <span className="sr-only">Copy SQL to clipboard</span>
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <div className="hidden md:block">
+                      <SidebarTrigger />
+                    </div>
+                    <Button variant="ghost" size="icon" onClick={copyToClipboard} disabled={!generatedQuery || isLoading}>
+                      <Clipboard className="h-4 w-4" />
+                      <span className="sr-only">Copy SQL to clipboard</span>
+                    </Button>
+                  </div>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -164,14 +214,15 @@ export default function Home() {
               </CardContent>
             </Card>
           </div>
-        </div>
 
-        <footer className="text-center mt-12 py-4 border-t">
-          <p className="text-sm text-muted-foreground">
-            Built with Next.js, Genkit, and shadcn/ui.
-          </p>
-        </footer>
-      </div>
-    </main>
+          <footer className="text-center mt-12 py-4 border-t">
+            <p className="text-sm text-muted-foreground">
+              Built with Next.js, Genkit, and shadcn/ui.
+            </p>
+          </footer>
+        </div>
+      </main>
+      </SidebarInset>
+    </>
   );
 }
