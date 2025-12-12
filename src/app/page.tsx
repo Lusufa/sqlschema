@@ -170,7 +170,7 @@ export default function Home() {
           </header>
 
           <div className="flex flex-col gap-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 gap-8">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 font-headline text-lg">
