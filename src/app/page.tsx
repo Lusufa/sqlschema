@@ -6,9 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { generateSqlQuery } from '@/ai/flows/generate-sql-query-from-natural-language';
-import { Database, BrainCircuit, Code, Clipboard, AlertTriangle, Loader2, Upload, FileText, Trash2 } from 'lucide-react';
+import { generateMockData } from '@/ai/flows/generate-mock-data-from-sql-query';
+import { Database, BrainCircuit, Code, Clipboard, AlertTriangle, Loader2, Upload, FileText, Trash2, Table as TableIcon } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Sidebar, SidebarContent, SidebarInset, SidebarTrigger, SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
 
 interface UploadedFile {
   name: string;
@@ -19,6 +23,7 @@ export default function Home() {
   const [schema, setSchema] = useState('');
   const [question, setQuestion] = useState('');
   const [generatedQuery, setGeneratedQuery] = useState('');
+  const [mockData, setMockData] = useState<any[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
@@ -40,15 +45,29 @@ export default function Home() {
     setIsLoading(true);
     setError(null);
     setGeneratedQuery('');
+    setMockData(null);
 
     try {
-      const result = await generateSqlQuery({
+      const sqlResult = await generateSqlQuery({
         schemaDefinition: schema,
         naturalLanguageQuestion: question,
       });
-      setGeneratedQuery(result.sqlQuery);
+      setGeneratedQuery(sqlResult.sqlQuery);
+
+      const mockDataResult = await generateMockData({
+        schemaDefinition: schema,
+        sqlQuery: sqlResult.sqlQuery,
+      });
+
+      try {
+        const parsedData = JSON.parse(mockDataResult.mockData);
+        setMockData(parsedData);
+      } catch (jsonError) {
+        setError('Failed to parse mock data. The generated data was not valid JSON.');
+      }
+      
     } catch (e: any) {
-      setError('Failed to generate SQL query. Please try again.');
+      setError('Failed to generate SQL query or mock data. Please try again.');
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -96,7 +115,6 @@ export default function Home() {
         });
       };
       reader.readAsText(file);
-      // Reset file input to allow re-uploading the same file
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -120,6 +138,27 @@ export default function Home() {
       setActiveFile(null);
     }
     toast({ title: 'File removed', description: `${fileName} has been removed.` });
+  };
+  
+  const renderTable = () => {
+    if (!mockData || mockData.length === 0) return null;
+    const headers = Object.keys(mockData[0]);
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            {headers.map(header => <TableHead key={header}>{header}</TableHead>)}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {mockData.map((row, rowIndex) => (
+            <TableRow key={rowIndex}>
+              {headers.map(header => <TableCell key={`${rowIndex}-${header}`}>{String(row[header])}</TableCell>)}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    );
   };
 
   return (
@@ -165,7 +204,7 @@ export default function Home() {
             </div>
             <h1 className="font-headline text-5xl font-bold tracking-tight">SQL Genius</h1>
             <p className="text-muted-foreground mt-4 text-lg max-w-2xl mx-auto">
-              Transform your natural language questions into SQL queries with the power of AI.
+              Transform your natural language questions into SQL queries and see the results instantly.
             </p>
           </header>
 
@@ -233,7 +272,7 @@ export default function Home() {
                     Generating...
                   </>
                 ) : (
-                  'Generate SQL'
+                  'Generate SQL & Results'
                 )}
               </Button>
             </div>
@@ -242,17 +281,11 @@ export default function Home() {
               <CardHeader>
                 <CardTitle className="flex items-center justify-between font-headline">
                   <div className="flex items-center gap-2">
-                    <Code />
-                    Generated SQL
+                    <TableIcon />
+                    Query Results
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="hidden md:block">
-                      <SidebarTrigger />
-                    </div>
-                    <Button variant="ghost" size="icon" onClick={copyToClipboard} disabled={!generatedQuery || isLoading}>
-                      <Clipboard className="h-4 w-4" />
-                      <span className="sr-only">Copy SQL to clipboard</span>
-                    </Button>
+                  <div className="hidden md:block">
+                    <SidebarTrigger />
                   </div>
                 </CardTitle>
               </CardHeader>
@@ -271,16 +304,35 @@ export default function Home() {
                     <AlertDescription>{error}</AlertDescription>
                   </Alert>
                 )}
-                {generatedQuery && !isLoading && (
-                  <div className="bg-muted rounded-md p-4">
-                    <pre className="font-code text-sm whitespace-pre-wrap">
-                      <code>{generatedQuery}</code>
-                    </pre>
+                {mockData && !isLoading && (
+                  <div className="space-y-4">
+                    {renderTable()}
+                     <Accordion type="single" collapsible className="w-full">
+                      <AccordionItem value="item-1">
+                        <AccordionTrigger>
+                          <div className="flex items-center gap-2 text-sm font-headline">
+                            <Code />
+                            View Generated SQL
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                           <div className="relative bg-muted rounded-md p-4">
+                            <Button variant="ghost" size="icon" onClick={copyToClipboard} className="absolute top-2 right-2 h-7 w-7">
+                              <Clipboard className="h-4 w-4" />
+                              <span className="sr-only">Copy SQL to clipboard</span>
+                            </Button>
+                            <pre className="font-code text-sm whitespace-pre-wrap">
+                              <code>{generatedQuery}</code>
+                            </pre>
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
                   </div>
                 )}
-                {!isLoading && !error && !generatedQuery && (
+                {!isLoading && !error && !mockData && (
                     <div className="text-center text-muted-foreground py-10">
-                        <p>Your generated SQL query will appear here.</p>
+                        <p>Your query results will appear here.</p>
                     </div>
                 )}
               </CardContent>
