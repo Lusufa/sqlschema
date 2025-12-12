@@ -208,7 +208,7 @@ export default function Home() {
             </p>
           </header>
 
-          <div className="max-w-5xl mx-auto flex flex-col gap-8">
+          <div className="max-w-4xl mx-auto flex flex-col gap-8">
             <div className="grid grid-cols-1 gap-8">
               <Card>
                 <CardHeader>
