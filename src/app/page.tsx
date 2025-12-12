@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { generateSqlQuery } from '@/ai/flows/generate-sql-query-from-natural-language';
 import { Database, BrainCircuit, Code, Clipboard, AlertTriangle, Loader2, Upload, FileText, Trash2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Sidebar, SidebarContent, SidebarHeader, SidebarInset, SidebarTrigger, SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
+import { Sidebar, SidebarContent, SidebarInset, SidebarTrigger, SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 
 interface UploadedFile {
   name: string;
