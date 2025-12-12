@@ -6,9 +6,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { generateSqlQuery } from '@/ai/flows/generate-sql-query-from-natural-language';
-import { Database, BrainCircuit, Code, Clipboard, AlertTriangle, Loader2, Upload } from 'lucide-react';
+import { Database, BrainCircuit, Code, Clipboard, AlertTriangle, Loader2, Upload, FileText, Trash2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Sidebar, SidebarContent, SidebarHeader, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { Sidebar, SidebarContent, SidebarHeader, SidebarInset, SidebarTrigger, SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
+
+interface UploadedFile {
+  name: string;
+  content: string;
+}
 
 export default function Home() {
   const [schema, setSchema] = useState('');
@@ -16,6 +21,8 @@ export default function Home() {
   const [generatedQuery, setGeneratedQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [activeFile, setActiveFile] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
 
@@ -65,8 +72,21 @@ export default function Home() {
       const reader = new FileReader();
       reader.onload = (e) => {
         const content = e.target?.result as string;
+        const newFile = { name: file.name, content };
+
+        setUploadedFiles(prevFiles => {
+          const existingFileIndex = prevFiles.findIndex(f => f.name === newFile.name);
+          if (existingFileIndex > -1) {
+            const updatedFiles = [...prevFiles];
+            updatedFiles[existingFileIndex] = newFile;
+            return updatedFiles;
+          }
+          return [...prevFiles, newFile];
+        });
+        
         setSchema(content);
-        toast({ title: 'File loaded successfully!' });
+        setActiveFile(newFile.name);
+        toast({ title: 'File loaded successfully!', description: `${file.name} is ready.` });
       };
       reader.onerror = () => {
         toast({
@@ -76,6 +96,10 @@ export default function Home() {
         });
       };
       reader.readAsText(file);
+      // Reset file input to allow re-uploading the same file
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -83,72 +107,124 @@ export default function Home() {
     fileInputRef.current?.click();
   };
 
+  const selectFile = (file: UploadedFile) => {
+    setSchema(file.content);
+    setActiveFile(file.name);
+  };
+  
+  const removeFile = (fileName: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setUploadedFiles(files => files.filter(f => f.name !== fileName));
+    if (activeFile === fileName) {
+      setSchema('');
+      setActiveFile(null);
+    }
+    toast({ title: 'File removed', description: `${fileName} has been removed.` });
+  };
+
   return (
     <>
       <Sidebar>
-        <SidebarContent className="p-4">
-          <div className="flex flex-col gap-8">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 font-headline">
-                  <Database />
-                  Database Schema
-                </CardTitle>
-                <CardDescription>
-                  Paste your SQL `CREATE TABLE` statements or upload a file.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-4">
-                <Textarea
-                  placeholder="CREATE TABLE users (id INT, name VARCHAR(255), ...);"
-                  className="h-48 font-code text-sm"
-                  value={schema}
-                  onChange={(e) => setSchema(e.target.value)}
-                />
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  className="hidden"
-                  accept=".sql,.txt"
-                />
-                <Button variant="outline" onClick={handleUploadClick}>
-                  <Upload className="mr-2 h-4 w-4" />
-                  Upload File
-                </Button>
-              </CardContent>
-            </Card>
+        <SidebarContent className="p-0">
+          <div className="flex flex-col gap-4">
+            <SidebarGroup className="pt-4">
+                <Card className="border-0 shadow-none">
+                  <CardHeader className="p-2 pt-0">
+                    <CardTitle className="flex items-center gap-2 font-headline text-lg">
+                      <Database />
+                      Database Schema
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      Paste your SQL `CREATE TABLE` statements or upload a file.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex flex-col gap-4 p-2 pt-0">
+                    <Textarea
+                      placeholder="CREATE TABLE users (id INT, name VARCHAR(255), ...);"
+                      className="h-40 font-code text-sm"
+                      value={schema}
+                      onChange={(e) => {
+                        setSchema(e.target.value)
+                        setActiveFile(null)
+                      }}
+                    />
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleFileChange}
+                      className="hidden"
+                      accept=".sql,.txt"
+                    />
+                    <Button variant="outline" size="sm" onClick={handleUploadClick}>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload File
+                    </Button>
+                  </CardContent>
+                </Card>
+            </SidebarGroup>
+            
+            {uploadedFiles.length > 0 && (
+                <SidebarGroup>
+                    <SidebarGroupLabel>Uploaded Files</SidebarGroupLabel>
+                    <SidebarMenu>
+                        {uploadedFiles.map((file) => (
+                            <SidebarMenuItem key={file.name}>
+                                <SidebarMenuButton onClick={() => selectFile(file)} isActive={activeFile === file.name} className="justify-between pr-8">
+                                    <div className="flex items-center gap-2">
+                                      <FileText/>
+                                      <span className="truncate">{file.name}</span>
+                                    </div>
+                                </SidebarMenuButton>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
+                                    onClick={(e) => removeFile(file.name, e)}
+                                >
+                                    <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive"/>
+                                    <span className="sr-only">Remove file</span>
+                                </Button>
+                            </SidebarMenuItem>
+                        ))}
+                    </SidebarMenu>
+                </SidebarGroup>
+            )}
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 font-headline">
-                  <BrainCircuit />
-                  Your Question
-                </CardTitle>
-                <CardDescription>
-                  Ask a question in plain English based on your schema.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Textarea
-                  placeholder="How many users are there?"
-                  className="h-24"
-                  value={question}
-                  onChange={(e) => setQuestion(e.target.value)}
-                />
-              </CardContent>
-            </Card>
 
-            <Button onClick={handleGenerateQuery} disabled={isLoading} size="lg" className="w-full">
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Generating...
-                </>
-              ) : (
-                'Generate SQL'
-              )}
-            </Button>
+            <SidebarGroup>
+                <Card className="border-0 shadow-none">
+                  <CardHeader className="p-2 pt-0">
+                    <CardTitle className="flex items-center gap-2 font-headline text-lg">
+                      <BrainCircuit />
+                      Your Question
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      Ask a question in plain English based on your schema.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-2 pt-0">
+                    <Textarea
+                      placeholder="How many users are there?"
+                      className="h-24"
+                      value={question}
+                      onChange={(e) => setQuestion(e.target.value)}
+                    />
+                  </CardContent>
+                </Card>
+            </SidebarGroup>
+
+            <div className="p-2">
+              <Button onClick={handleGenerateQuery} disabled={isLoading} size="lg" className="w-full">
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  'Generate SQL'
+                )}
+              </Button>
+            </div>
           </div>
         </SidebarContent>
       </Sidebar>
