@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { generateSqlQuery } from '@/ai/flows/generate-sql-query-from-natural-language';
 import { generateMockData } from '@/ai/flows/generate-mock-data-from-sql-query';
-import { Database, BrainCircuit, Code, Clipboard, AlertTriangle, Loader2, Upload, FileText, Trash2, Table as TableIcon } from 'lucide-react';
+import { Database, BrainCircuit, Code, Clipboard, AlertTriangle, Loader2, Upload, FileText, Trash2, Table as TableIcon, History } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Sidebar, SidebarContent, SidebarInset, SidebarTrigger, SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from '@/components/ui/sidebar';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -20,8 +20,8 @@ interface UploadedFile {
 }
 
 export default function Home() {
-  const [schema, setSchema] = useState('');
-  const [question, setQuestion] = useState('');
+  const [schema, setSchema] = useState('CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(255), email VARCHAR(255));');
+  const [question, setQuestion] = useState(`Show me all users with a gmail address`);
   const [generatedQuery, setGeneratedQuery] = useState('');
   const [mockData, setMockData] = useState<any[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -164,11 +164,13 @@ export default function Home() {
   return (
     <>
       <Sidebar>
-        <SidebarContent className="p-0">
-          <div className="flex flex-col gap-4">
-            {uploadedFiles.length > 0 && (
-                <SidebarGroup className="pt-4">
-                    <SidebarGroupLabel>Uploaded Files</SidebarGroupLabel>
+        <SidebarContent className="p-0 flex flex-col">
+          <div className="p-4">
+              <h2 className="font-headline text-lg font-semibold flex items-center gap-2"><History /> Schema History</h2>
+          </div>
+          <div className="flex-1 overflow-y-auto">
+            {uploadedFiles.length > 0 ? (
+                <SidebarGroup className="pt-0">
                     <SidebarMenu>
                         {uploadedFiles.map((file) => (
                             <SidebarMenuItem key={file.name}>
@@ -191,80 +193,87 @@ export default function Home() {
                         ))}
                     </SidebarMenu>
                 </SidebarGroup>
+            ) : (
+              <div className="text-center text-muted-foreground p-8 flex flex-col items-center justify-center h-full">
+                <History className="h-10 w-10 mb-4" />
+                <p className="text-sm">No history yet. Imported schemas will appear here for quick access.</p>
+              </div>
             )}
           </div>
         </SidebarContent>
       </Sidebar>
       <SidebarInset>
-        <main className="min-h-screen bg-background text-foreground">
+        <main className="min-h-screen">
         <div className="container mx-auto p-4 md:p-8">
-          <header className="text-center mb-12">
+          <header className="mb-12">
             <div className="md:hidden mb-4">
               <SidebarTrigger />
             </div>
-            <h1 className="font-headline text-5xl font-bold tracking-tight">SQL Genius</h1>
-            <p className="text-muted-foreground mt-4 text-lg max-w-2xl mx-auto">
-              Transform your natural language questions into SQL queries and see the results instantly.
-            </p>
+            <div className="flex items-center gap-2">
+                <Database className="h-8 w-8 text-primary" />
+                <h1 className="font-headline text-3xl font-bold tracking-tight">QueryGenius</h1>
+            </div>
           </header>
 
           <div className="max-w-4xl mx-auto flex flex-col gap-8">
-            <div className="grid grid-cols-1 gap-8">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 font-headline text-lg">
-                    <Database />
-                    Database Schema
-                  </CardTitle>
-                  <CardDescription>
-                    Paste your SQL `CREATE TABLE` statements or upload a file.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex flex-col gap-4">
-                  <Textarea
-                    placeholder="CREATE TABLE users (id INT, name VARCHAR(255), ...);"
-                    className="h-40 font-code text-sm"
-                    value={schema}
-                    onChange={(e) => {
-                      setSchema(e.target.value);
-                      setActiveFile(null);
-                    }}
-                  />
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    className="hidden"
-                    accept=".sql,.txt"
-                  />
-                  <Button variant="outline" onClick={handleUploadClick}>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Upload File
-                  </Button>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 font-headline text-lg">
-                    <BrainCircuit />
-                    Your Question
-                  </CardTitle>
-                  <CardDescription>
-                    Ask a question in plain English based on your schema.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Textarea
-                    placeholder="How many users are there?"
-                    className="h-40"
-                    value={question}
-                    onChange={(e) => setQuestion(e.target.value)}
-                  />
-                </CardContent>
-              </Card>
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-headline text-xl">
+                  1. Provide Database Schema
+                </CardTitle>
+                <CardDescription>
+                  Write your schema manually or import a file. This gives the AI context about your database structure.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex gap-2 mb-4">
+                    <Button variant="outline" className="bg-white">Write Schema</Button>
+                    <Button variant="outline" onClick={handleUploadClick}>
+                        <Upload className="mr-2 h-4 w-4" />
+                        Import File
+                    </Button>
+                </div>
+                <Textarea
+                  placeholder="CREATE TABLE users (id INT, name VARCHAR(255), ...);"
+                  className="h-40 font-code text-sm bg-gray-50"
+                  value={schema}
+                  onChange={(e) => {
+                    setSchema(e.target.value);
+                    setActiveFile(null);
+                  }}
+                />
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  className="hidden"
+                  accept=".sql,.txt"
+                />
+              </CardContent>
+            </Card>
 
-            <div className="text-center">
+            <Card>
+              <CardHeader>
+                <CardTitle className="font-headline text-xl">
+                  2. Write Your Query in Plain English
+                </CardTitle>
+                <CardDescription>
+                  Describe what you want to achieve, and our AI will translate it into a SQL query.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <label htmlFor="query-input" className="font-medium text-sm mb-2 block">Your Query</label>
+                <Textarea
+                  id="query-input"
+                  placeholder="e.g., 'Show me all users with a gmail address'"
+                  className="h-28 bg-gray-50"
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                />
+              </CardContent>
+            </Card>
+
+            <div className="text-left">
               <Button onClick={handleGenerateQuery} disabled={isLoading} size="lg">
                 {isLoading ? (
                   <>
@@ -272,22 +281,19 @@ export default function Home() {
                     Generating...
                   </>
                 ) : (
-                  'Run'
+                  'Generate Query'
                 )}
               </Button>
             </div>
             
             <Card className="min-h-[300px] w-full">
               <CardHeader>
-                <CardTitle className="flex items-center justify-between font-headline">
-                  <div className="flex items-center gap-2">
-                    <TableIcon />
-                    Query Results
-                  </div>
-                  <div className="hidden md:block">
-                    <SidebarTrigger />
-                  </div>
+                <CardTitle className="font-headline text-xl">
+                  3. Generated Result
                 </CardTitle>
+                 <CardDescription>
+                  Here's the generated SQL query. You can execute it to see a preview of the results.
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 {isLoading && (
@@ -332,7 +338,7 @@ export default function Home() {
                 )}
                 {!isLoading && !error && !mockData && (
                     <div className="text-center text-muted-foreground py-10">
-                        <p>Your query results will appear here.</p>
+                        <p>Your generated query and results will appear here.</p>
                     </div>
                 )}
               </CardContent>
