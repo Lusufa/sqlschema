@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -29,10 +29,31 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [activeFile, setActiveFile] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('manual');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
 
   const { toast } = useToast();
+
+  useEffect(() => {
+    try {
+      const storedFiles = localStorage.getItem('sqlgenius_schema_history');
+      if (storedFiles) {
+        setUploadedFiles(JSON.parse(storedFiles));
+      }
+    } catch (error) {
+      console.error("Failed to parse schema history from localStorage", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('sqlgenius_schema_history', JSON.stringify(uploadedFiles));
+    } catch (error) {
+      console.error("Failed to save schema history to localStorage", error);
+    }
+  }, [uploadedFiles]);
+
 
   const handleGenerateQuery = async () => {
     if (!schema || !question) {
@@ -106,6 +127,7 @@ export default function Home() {
         
         setSchema(content);
         setActiveFile(newFile.name);
+        setActiveTab('manual');
         toast({ title: 'File loaded successfully!', description: `${file.name} is ready.` });
       };
       reader.onerror = () => {
@@ -129,6 +151,7 @@ export default function Home() {
   const selectFile = (file: UploadedFile) => {
     setSchema(file.content);
     setActiveFile(file.name);
+    setActiveTab('manual');
   };
   
   const removeFile = (fileName: string, e: React.MouseEvent) => {
@@ -205,7 +228,7 @@ export default function Home() {
         </SidebarContent>
       </Sidebar>
       
-      <main className="flex-1 flex flex-col p-4 md:p-6 max-w-6xl mx-auto w-full">
+      <main className="flex-1 flex flex-col p-4 md:p-6 max-w-7xl mx-auto w-full">
         <header className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <div className="md:hidden">
@@ -225,7 +248,7 @@ export default function Home() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <Tabs defaultValue="manual" className="w-full">
+                  <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                     <TabsList className="grid w-full grid-cols-2">
                       <TabsTrigger value="manual">Manual</TabsTrigger>
                       <TabsTrigger value="upload" onClick={handleUploadClick}>Import File</TabsTrigger>
