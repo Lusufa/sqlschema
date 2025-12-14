@@ -22,7 +22,7 @@ interface UploadedFile {
 
 export default function Home() {
   const [schema, setSchema] = useState('CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(255), email VARCHAR(255));');
-  const [question, setQuestion] = useState(`Show me all users with a gmail address`);
+  const [question, setQuestion] = useState('');
   const [generatedQuery, setGeneratedQuery] = useState('');
   const [mockData, setMockData] = useState<any[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -205,7 +205,7 @@ export default function Home() {
         </SidebarContent>
       </Sidebar>
       
-      <main className="flex-1 flex flex-col p-4 md:p-6">
+      <main className="flex-1 flex flex-col p-4 md:p-6 max-w-7xl mx-auto w-full">
         <header className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
               <div className="md:hidden">
@@ -261,7 +261,7 @@ export default function Home() {
                 <CardContent>
                   <Textarea
                     id="query-input"
-                    placeholder="e.g., 'Show me all users with a gmail address'"
+                    placeholder="Show me all users with a gmail address"
                     className="h-28"
                     value={question}
                     onChange={(e) => setQuestion(e.target.value)}
@@ -273,7 +273,7 @@ export default function Home() {
                         Generating...
                       </>
                     ) : (
-                      'Generate Query'
+                      'Run'
                     )}
                   </Button>
                 </CardContent>
