@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { SidebarProvider } from '@/components/ui/sidebar';
 
 export const metadata: Metadata = {
-  title: 'SQL Genius',
+  title: 'SQLGenius',
   description: 'Generate SQL queries from natural language using AI',
 };
 
