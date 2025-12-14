@@ -250,7 +250,7 @@ export default function Home() {
                 <CardContent>
                   <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                     <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="manual">Manual</TabsTrigger>
+                      <TabsTrigger value="manual">Schema</TabsTrigger>
                       <TabsTrigger value="upload" onClick={handleUploadClick}>Import File</TabsTrigger>
                     </TabsList>
                     <TabsContent value="manual">
