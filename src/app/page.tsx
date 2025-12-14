@@ -358,7 +358,14 @@ export default function Home() {
         </div>
         <footer className="text-center mt-8 py-4 border-t border-border">
           <p className="text-sm text-muted-foreground">
-            Built with Next.js, Genkit, and shadcn/ui.
+            Built by प्यार से{' '}
+            <a href="https://utkarsh-portfolio-01.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+              Utkarsh
+            </a>{' '}
+            &{' '}
+            <a href="https://rtportfolio-eta.vercel.app/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+              RT
+            </a>
           </p>
         </footer>
       </main>
