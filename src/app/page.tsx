@@ -21,7 +21,7 @@ interface UploadedFile {
 }
 
 export default function Home() {
-  const [schema, setSchema] = useState('CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(255), email VARCHAR(255));');
+  const [schema, setSchema] = useState('');
   const [question, setQuestion] = useState('');
   const [generatedQuery, setGeneratedQuery] = useState('');
   const [mockData, setMockData] = useState<any[] | null>(null);
@@ -232,7 +232,7 @@ export default function Home() {
                     </TabsList>
                     <TabsContent value="manual">
                       <Textarea
-                        placeholder="CREATE TABLE users (id INT, name VARCHAR(255), ...);"
+                        placeholder="CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(255), email VARCHAR(255));"
                         className="h-40 font-code text-sm mt-4"
                         value={schema}
                         onChange={(e) => {
